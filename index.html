@@ -1,7 +1,4 @@
-//http://us1.internet-radio.com:8180/
-package xmp
 
-const Tmpl = `{{define "raxx"}}
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,19 +9,20 @@ body {padding: 0px;margin: 0px; border: 0px;}
 #p0 { width: 200px;height: 30px;border: 0px;padding: 0px;background: #232323;color: lightgray;font-family:Arial;font-size:10px;font-weight: lighter;font-style: italic;text-align: center;display: table-cell;vertical-align: middle;top: 0px;left: 20px;cursor: default;}
 </style>
   <script>
-  var i = 0;
-  var sr =
-  [{{range .}}{sn:"http://{{.Ln}}/;", tl:"{{.Nm}}", nm:"{{.Sn}}", src:"http://{{.Ln}}/"},{{end}}];
-
-    function rwnd(){
+  var i = 1;
+  var ln = "";
+  var nm = "";
+  var un = "";
+  function rwnd(){
     var al = document.getElementById("al");
     var cl = document.getElementById("cl");
     var d0 = document.getElementById("d0");
     al.pause();
     cl.style.fill='#232323';
     i++;
-    if (i==sr.length){i=0};
-    d0.innerHTML='<p id=p0>'+sr[i].tl+'</p>';
+    if (i==20){i=0};
+    nm = httpGet("http://localhost:8000/stat?nm="+i);
+    d0.innerHTML='<p id=p0>'+nm+'</p>';
   }
 
   function rest(){
@@ -37,7 +35,8 @@ body {padding: 0px;margin: 0px; border: 0px;}
     var d0 = document.getElementById("d0");
 
     if (al.paused) {
-      al.src=sr[i].sn;
+      un = httpGet("http://localhost:8000/stat?un="+i);
+      al.src = un;
       al.play();
       cl.style.fill="red";
       anim(0);
@@ -74,17 +73,43 @@ body {padding: 0px;margin: 0px; border: 0px;}
     xmlHttp.send(null);
     return xmlHttp.responseText;}
 
-  function out(){
-    var d0 = document.getElementById("d0");
-    var a = httpGet(sr[i].src);
-    var a = a.substr(a.search('Current Song'),a.length-1);
-    var a = a.substr(a.search('<b>')+3,a.search('</b>'));
-    console.log(a);
-    d0.innerHTML='<p id=p0>' + a + '</p>'}
+    function out(){
+      var d0 = document.getElementById("d0");
+      ln = httpGet("http://localhost:8000/stat?ln="+i);
+      var x = httpGet(ln);
+      var y = x.substr(x.search('<title>'),x.search('</title>'));
+      y = y.substr(7,y.search('</title>')-7);
+      y = y.replace(/(&nbsp;|<([^>]+)>)/ig, "");
+      y = y.substr(0,3);
+      if (y == 'SHO'){
+      var a = x.substr(x.search('Current Song'),x.length-1);
+      var b = x.substr(x.search('Playing Now'),x.length-1);
+      var a = a.substr(a.search('<b>')+3,a.search('</b>'));
+      var a = a.replace(/(&nbsp;|<([^>]+)>)/ig, "");
+      var b = b.substr(b.search('<b>')+3,b.search('</b>'));
+      var b = b.replace(/(&nbsp;|<([^>]+)>)/ig, "");
+      if (a.length > 0){d0.innerHTML='<p id=p0>' + a + '</p>'};
+      if (b.length > 0){d0.innerHTML='<p id=p0>' + b + '</p>'};
+    };
+    if (y == 'Ice'){
+      var x = httpGet(ln+"/status.xsl");
+      var c = x.substr(x.search('Currently playing'),x.length-1);
+      var c = c.substr(c.search('class=\"streamstats\"')+19,c.length-1);
+      var c = c.substr(c.search('>')+1,c.search('</td>')-1);
+      var c = c.replace(/(&nbsp;|<([^>]+)>)/ig, "");
+      var d = x.substr(x.search('Current Song'),x.length-1);
+      var d = d.substr(d.search('class=\"streamdata\">')+17,d.length-1);
+      var d = d.substr(d.search('>')+1,d.search('</td>'));
+      var d = d.replace(/(&nbsp;|<([^>]+)>)/ig, "");
+      if (c.length > 0){d0.innerHTML='<p id=p0>' + c + '</p>'};
+      if (d.length > 0){d0.innerHTML='<p id=p0>' + d + '</p>'};
+    };
+    }
 
    function over(){
       var d0 = document.getElementById("d0");
-      d0.innerHTML ='<p>'+sr[i].tl+'</p>';
+      nm = httpGet("http://localhost:8000/stat?nm="+i);
+      d0.innerHTML ='<p>'+nm+'</p>';
     }
 
   function vol(delta) {
@@ -127,5 +152,3 @@ window.setInterval(out, 10000);
   <div id=d0></div>
 </body>
 </html>
-{{end}}
-`
